@@ -521,6 +521,18 @@ class Specfem:
             for tag in ["d", "v", "a", "p"]:
                 unix.rename(old=f"single_{tag}.su", new="single.su",
                             names=glob(os.path.join("OUTPUT_FILES", "*.su")))
+                
+        # Convert pressure PRE label to P. Specfem outputs PRE, seisflows expects P. 
+        if 'P' in self.components: 
+            import re 
+            p_traces = os.getcwd() + "/OUTPUT_FILES"
+            output_files = glob(p_traces+"/*.*PRE.*") # If no PRE files, this should do nothing. 
+            for ifile, ffile in enumerate(output_files): 
+                fstream = ffile.split('/')[-1] # Get the NET.STA.COMPONENT.
+                fstream_new = fstream.replace('PRE', 'P')
+                fstream_new = p_traces + '/' + fstream_new
+                os.system(f'mv {ffile} {fstream_new}')
+
         # Exporting traces to disk (output/) for more permanent storage
         if export_traces:
             if not os.path.exists(export_traces):
