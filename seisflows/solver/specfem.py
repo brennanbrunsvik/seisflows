@@ -529,7 +529,7 @@ class Specfem:
             output_files = glob(p_traces+"/*.*PRE.*") # If no PRE files, this should do nothing. 
             for ifile, ffile in enumerate(output_files): 
                 fstream = ffile.split('/')[-1] # Get the NET.STA.COMPONENT.
-                fstream_new = fstream.replace('PRE', 'P')
+                fstream_new = fstream.replace('PRE', 'P').replace('.P.', '.__P.') # Replace PRE with P. If there was just PRE and no leading qualifiers, we should make sure there are three characters. 
                 fstream_new = p_traces + '/' + fstream_new
                 os.system(f'mv {ffile} {fstream_new}')
 
@@ -586,11 +586,24 @@ class Specfem:
 
         unix.cd(self.cwd)
 
+                # Convert pressure PRE label to P. Specfem outputs PRE, seisflows expects P. 
+        if 'P' in self.components: 
+            import re 
+            p_traces = os.getcwd() + "/traces/adj"
+            output_files = glob(p_traces+"/*.XP.*") # If no PRE files, this should do nothing. 
+            for ifile, ffile in enumerate(output_files): 
+                fstream = ffile.split('/')[-1] # Get the NET.STA.COMPONENT.
+                fstream_new = fstream.replace('.XP.', '.PRE.') # Replace PRE with P. If there was just PRE and no leading qualifiers, we should make sure there are three characters. 
+                fstream_new = p_traces + '/' + fstream_new
+                os.system(f'cp {ffile} {fstream_new}') # TODO copy? or mv? 
+
+
         setpar(key="SIMULATION_TYPE", val="3", file="DATA/Par_file")
         setpar(key="SAVE_FORWARD", val=".false.", file="DATA/Par_file")
 
         unix.rm("SEM")
         unix.ln("traces/adj", "SEM")
+
 
         # Calling subprocess.run() for each of the binary executables listed
         for exc in executables:
