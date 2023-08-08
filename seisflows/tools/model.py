@@ -356,7 +356,7 @@ class Model:
                 imax = sum(self.ngll) * idim + sum(self.ngll[:iproc + 1])
                 model[key].extend([vector[imin:imax]])
 
-            model[key] = np.array(model[key])
+            model[key] = np.array(model[key], dtype = 'object')
         return model
 
     def check(self, min_pr=-1., max_pr=0.5):
@@ -708,7 +708,7 @@ class Model:
         # !!! Causes a visible deprecation warning from NumPy but setting
         # !!! array type as 'object' causes problems with pickling and
         # !!! merging arrays
-        array = np.array(array)
+        array = np.array(array, dtype = 'object') # brb2023/08/03 Temporary switch back to object dtype, else I get an error with array being nonhomogeous (I forget the exact word)
 
         return array
 
