@@ -506,7 +506,7 @@ class Model:
         model = Dict()
         coords = Dict()
         ngll = []
-        data = np.load(file=file)
+        data = np.load(file=file, allow_pickle=True)
         for i, key in enumerate(data.files):
             if key == "fmt":
                 continue
@@ -596,7 +596,7 @@ class Model:
             _title = f"{title}\n{_title}"
         ax.set_title(_title)
         cbar.ax.set_ylabel(parameter.title(), rotation=270, labelpad=15)
-
+        
         if save:
             plt.savefig(save)
         if show:
