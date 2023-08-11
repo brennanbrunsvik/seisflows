@@ -341,6 +341,13 @@ class Pyaflowa:
             pass
         # Run processing in serial
         else:
+
+            # brb2023/08/11 Before calculating misfit: if the h5 waveform dataset is present from a previous line search iteration, remove it. I get an error where waveform components are not loaded in (compnoent = '') if the h5 dataset was present before running quantify_misfit_station
+            ds_fid = os.path.join(self.path["_datasets"], f"{config.event_id}.h5")
+            if os.path.isfile(ds_fid): 
+                os.remove(ds_fid) 
+                print('Removing h5 dataset before calculating misfit')
+
             for code in self._station_codes:
                 misfit_sta, nwin_sta = self.quantify_misfit_station(
                     config=config, station_code=code, save_adjsrcs=save_adjsrcs
@@ -468,6 +475,7 @@ class Pyaflowa:
         else:
             ds = None
         mgmt = Manager(config=config, ds=ds)
+
         # If data gather fails, return because there's nothing else we can do
         try:
             # `gather` function uses Config path structure and Client attribute
@@ -478,7 +486,11 @@ class Pyaflowa:
         except ManagerError as e:
             station_logger.warning(e)
             return None, None
-
+        
+        for istr in range(len(mgmt.st)): 
+            if len(mgmt.st[istr].stats.component)==0:  #brb2023/08/10 Getting a component of '' sometimes when the datasets folder already has a dataset in it. 
+                raise ValueError('brb2023/08/10. Channel code missing in a stream. Maybe need to delete datasets/h5 file before each line search. ')
+        
         # If any part of this processing fails, move on to plotting because we
         # will have gathered waveform data so a figure is still useful.
         try:
