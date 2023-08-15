@@ -8,6 +8,7 @@ import os
 import sys
 import subprocess
 from contextlib import redirect_stdout
+import time
 
 from seisflows import logger
 from seisflows.tools import unix
@@ -188,6 +189,8 @@ class Workstation:
             defined, such that the job is submitted as a single-core job to
             the system.
         """
+        time_1 = time.time()
+
         if single:
             ntasks = 1
         else:
@@ -204,6 +207,8 @@ class Workstation:
                 with redirect_stdout(f):
                     for func in funcs:
                         func(**kwargs)
+
+        logger.debug("running functions above took {:1.2f} minutes.".format((time.time() - time_1) / 60))
 
     def _get_log_file(self, task_id):
         """

@@ -13,6 +13,7 @@ actually submitting to any job scheduler.
 import os
 import sys
 import subprocess
+import time
 from concurrent.futures import ProcessPoolExecutor, wait
 from seisflows import logger, ROOT_DIR
 from seisflows.tools.unix import nproc
@@ -161,6 +162,8 @@ class Cluster(Workstation):
         logger.info(f"running functions {[_.__name__ for _ in funcs]} on "
                     f"system {ntasks} times")
 
+        time_1 = time.time()
+
         # Create the run call which will simply call an external Python script
         # e.g., run --funcs func.p --kwargs kwargs.p --environment ...
         run_call = " ".join([
@@ -181,6 +184,8 @@ class Cluster(Workstation):
                 futures = [executor.submit(self._run_task, run_call, task_id)
                            for task_id in range(ntasks)]
             wait(futures)
+
+        logger.debug("running functions above took {:1.2f} minutes.".format( (time.time()-time_1)/60 ) )
 
     def _run_task(self, run_call, task_id):
         """
