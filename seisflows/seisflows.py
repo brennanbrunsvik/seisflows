@@ -1070,6 +1070,7 @@ class SeisFlows:
         st.plot(outfile=savefig, **kwargs)
 
     def plot2d(self, name=None, parameter=None, cmap=None, savefig=None,
+               stanum_plt = None,
                **kwargs):
         """
         Plot model, gradient or kernels in the PATH.OUTPUT
@@ -1110,8 +1111,14 @@ class SeisFlows:
         assert(base_model.coordinates is not None), \
             f"`MODEL_INIT` does not have any available 2D coordinates"
 
+        # If plotting kernel for one station, that file will be in a station specific folder.
+        if stanum_plt is not None: # "KERNELS" in name:
+            name_wsta = name + '/' + str(stanum_plt)  # Add station number. TODO have input for station number.
+        else:
+            name_wsta = name
+
         # Now read in the actual updated values and update the model
-        plot_model = Model(path=os.path.join(output_dir, name))
+        plot_model = Model(path=os.path.join(output_dir, name_wsta))
         plot_model.coordinates = base_model.coordinates
         # plot2d has internal check for acceptable parameter value
         plot_model.plot2d(parameter=parameter, cmap=cmap, show=True,
