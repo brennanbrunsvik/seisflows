@@ -348,9 +348,18 @@ class Pyaflowa:
                 os.remove(ds_fid) 
                 print('Removing h5 dataset before calculating misfit')
 
-            for code in self._station_codes:
+            #brb2023/08/15 Only plot a subset of waveforms. Plotting could otherwise be extremely slow.
+            nsta_plot = 5 # Plot this many stations
+            plot_sta = np.floor(np.linspace(0, len(self._station_codes), nsta_plot+2)[1:-1]) # Pick nsta_plot divisions, evenly spaced from 0 to nsta. This should still work if nsta_plot > nsta, we would get plot_sta of something like [0, 1, 1, 2, 3, 3, 4]
+            plot_sta[plot_sta<0]=0 # Prevent glitches, just in case.
+            plot_sta[plot_sta>len(self._station_codes)] = len(self._station_codes) # Prevent glitches, just in case.
+            if nsta_plot < len(self._station_codes):
+                logger.debug(f'Misfits, plotting only {nsta_plot} stations (hard coded)')
+
+            for icode, code in enumerate(self._station_codes): # brb2023/08/15 This block of code is running slow. Why?
+                to_plot = icode in plot_sta
                 misfit_sta, nwin_sta = self.quantify_misfit_station(
-                    config=config, station_code=code, save_adjsrcs=save_adjsrcs
+                    config=config, station_code=code, save_adjsrcs=save_adjsrcs, plot = to_plot
                 )
                 if misfit_sta is not None:
                     misfit += misfit_sta
@@ -431,7 +440,8 @@ class Pyaflowa:
 
         return config
 
-    def quantify_misfit_station(self, config, station_code, save_adjsrcs=False):
+    def quantify_misfit_station(self, config, station_code, save_adjsrcs=False,
+                                plot = None):
         """
         Main Pyatoa processing function to quantify misfit + generation adjsrc.
 
@@ -453,6 +463,9 @@ class Pyaflowa:
             will be saved. They of course can be saved manually later using
             Pyatoa + PyASDF
         """
+        if plot is None:
+            plot = self.plot
+
         # Unique identifier for the given source-receiver pair for file naming
         # Something like: 001_i01_s00_XX_XYZ
         net, sta, loc, cha = station_code.split(".")
@@ -504,7 +517,7 @@ class Pyaflowa:
 
         # Plot waveform + map figure. Map may fail if we don't have appropriate
         # metdata, in which case we fall back to plotting waveform only
-        if self.plot:
+        if plot:
             # e.g., 001_i01_s00_XX_ABC.png
             save = os.path.join(self.path["_figures"], f"{tag}.png")
             try:
