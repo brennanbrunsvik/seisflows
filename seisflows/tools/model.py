@@ -581,8 +581,17 @@ class Model:
             z = np.append(z, self.coordinates["z"][iproc])
         data = self.merge(parameter=parameter)
 
+        cap_data = False
+        if cap_data and ("kernel" in parameter): 
+            nstd_cap = 20# 0.0025
+            Warning(f'Capping kernel at + - {nstd_cap} standard deviation')
+            std = np.std(np.abs(data)) * nstd_cap
+        else: 
+            std = None 
+
         f, p, cbar = plot_2d_image(x=x, z=z, data=data, cmap=cmap,
-                                   zero_midpoint=zero_midpoint)
+                                   zero_midpoint=zero_midpoint, 
+                                   clip_val = std)
 
         # Set some figure labels based on information we know here
         ax = plt.gca()
@@ -598,7 +607,7 @@ class Model:
         cbar.ax.set_ylabel(parameter.title(), rotation=270, labelpad=15)
         
         if save:
-            plt.savefig(save)
+            plt.savefig(save, dpi=800)
         if show:
             plt.show()
 

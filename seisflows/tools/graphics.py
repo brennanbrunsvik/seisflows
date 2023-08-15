@@ -48,7 +48,7 @@ def plot_2d_contour(x, z, data, cmap="viridis", zero_midpoint=False):
     return f, p, cbar
 
 
-def plot_2d_image(x, z, data, cmap="viridis", zero_midpoint=False, resX=1000, resZ=1000):
+def plot_2d_image(x, z, data, cmap="viridis", zero_midpoint=False, resX=1000, resZ=1000, clip_val = None):
     """
     Plots values of a SPECEFM2D model/gradient by interpolating onto a regular grid
 
@@ -77,11 +77,19 @@ def plot_2d_image(x, z, data, cmap="viridis", zero_midpoint=False, resX=1000, re
 
     # Assign zero as the midpoint for things like gradients
     if zero_midpoint:
-        abs_max_val = max(abs(data))
-        vmin = -1 * abs_max_val
-        vmax = abs_max_val
+        if clip_val is not None: 
+            vmin = - clip_val 
+            vmax =   clip_val 
+        else: 
+            abs_max_val = max(abs(data))
+            vmin = -1 * abs_max_val
+            vmax = abs_max_val
+
     else:
         vmin, vmax = None, None
+
+    # vmin *= 1/500 / 500
+    # vmax *= 1/500 / 500
 
     f = plt.figure(figsize=(10 * rx, 10 * ry))
     from scipy.interpolate import griddata
