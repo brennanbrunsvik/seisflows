@@ -28,6 +28,7 @@ different optimization algorithms.
 import os
 import numpy as np
 from glob import glob
+import matplotlib.pyplot as plt
 
 from seisflows import logger
 from seisflows.tools import msg, unix
@@ -431,6 +432,15 @@ class Gradient:
             m_try.update(vector=_m.vector + alpha * _p.vector)
             logger.info("line search model 'm_try' parameters: ")
             m_try.check()
+
+            # How much was model updated?
+            plt.figure()
+            dm = np.abs((alpha * _p.vector))
+            update_hist = plt.hist(dm)
+            update_counts, update_vals = [update_hist[0], update_hist[1]]
+            plt.close()
+
+
         elif status.upper() == "FAIL":
             # Failed line search skips over costly vector manipulations
             m_try = None

@@ -349,7 +349,7 @@ class Pyaflowa:
                 print('Removing h5 dataset before calculating misfit')
 
             #brb2023/08/15 Only plot a subset of waveforms. Plotting could otherwise be extremely slow.
-            nsta_plot = 5 # Plot this many stations
+            nsta_plot = 15 # Plot this many stations
             plot_sta = np.floor(np.linspace(0, len(self._station_codes), nsta_plot+2)[1:-1]) # Pick nsta_plot divisions, evenly spaced from 0 to nsta. This should still work if nsta_plot > nsta, we would get plot_sta of something like [0, 1, 1, 2, 3, 3, 4]
             plot_sta[plot_sta<0]=0 # Prevent glitches, just in case.
             plot_sta[plot_sta>len(self._station_codes)] = len(self._station_codes) # Prevent glitches, just in case.

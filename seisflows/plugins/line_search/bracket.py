@@ -120,7 +120,7 @@ class Bracket:
         if sort:
             f = f[abs(x).argsort()]
             x = x[abs(x).argsort()]
-
+            logger.debug(f"Step lengths and misfits will be sorted by steplength, order of iterations: {abs(x).argsort()}") #brb2023/08/17 Warn user. I spent a while debugging, thinking that the misfit was increasing with each line step iteration, because the logs were reporting increasing misfit.
         return x, f, self.gtg, self.gtp, i, j
 
     def _print_stats(self, x, f):

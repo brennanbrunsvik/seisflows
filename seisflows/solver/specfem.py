@@ -470,6 +470,25 @@ class Specfem:
         self._initialize_working_directories()
         self._export_starting_models()
 
+        #brb2023/08/18 Temporary place. Make mask for elastic region. Need to move this.
+        logger.debug('Making mask for elastic and acoustic regions')
+        from seisflows.tools.model import Model
+        minit = Model(path=self.path.model_init) # Starting velocity model. Get vp from this.
+        vs_cores = minit.model['vs'] # Need vs. Where is it 0?
+        for icor, vs_c in enumerate(vs_cores): # Loop over each core/mpi domain.
+            is_acoustic = vs_c == 0 # If vs == 0, this is acoustic.
+
+            # Convert minit into a mask. Loop over each parameter, and set 1 or 0 depending on whethere it is in acoustic or elastic region.
+            for iparam, param in enumerate(minit.available_parameters):
+                mask_cor_param = minit.model[param][icor]
+
+                # Acoustic is 0. Acoustic region will be masked out and not updated. Don't change elastic region.
+                mask_cor_param[is_acoustic] = 0 # Because of pointers, we can edit the arrays in minit directly. Initial model parameters in this minit variable will be overwritten with mask values.
+                mask_cor_param[~is_acoustic] = 1
+
+        mask = minit
+        mask.write(path=self.path.eval_grad+'/mask.bin')
+
     def forward_simulation(self, executables=None, save_traces=False,
                            export_traces=False, save_forward=True, **kwargs):
         """

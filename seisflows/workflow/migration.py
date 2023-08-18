@@ -73,6 +73,7 @@ class Migration(Forward):
         self.export_kernels = export_kernels
 
         self.path["mask"] = path_mask
+        self.path["mask_elastic"] = self.path.eval_grad+'/mask.bin'
 
         # Overwriting base class required modules list
         self._required_modules = ["system", "solver", "preprocess"]
@@ -172,6 +173,21 @@ class Migration(Forward):
         logger.info(msg.mnr("GENERATING/PROCESSING MISFIT KERNEL"))
         self.system.run([combine_event_kernels, smooth_misfit_kernel],
                         single=True)
+
+        # Apply a mask in acoustic region. Kernel smoothing makes false sensitivity in water.
+        elastic_mask = Model(path = self.path['eval_grad']+'/mask.bin')
+        misfit_kernel = Model(path = self.path['eval_grad']+'/misfit_kernel')
+
+        if len(misfit_kernel.available_parameters) > 2:
+            logger.critical('I only made vp and vs kernel masks. If you are inverting more parameters, change their masking here. Continuing, but elastic sensitivity might be smoothed into acoustic domains. ')
+        for iproc in range(len(elastic_mask.model['vp'])): # For each process or mpi domain.
+            if 'vp_kernel' in misfit_kernel.available_parameters:
+                misfit_kernel.model['vp_kernel'][iproc] *= elastic_mask.model['vp'][iproc]
+            if 'vs_kernel' in misfit_kernel.available_parameters:
+                misfit_kernel.model['vs_kernel'][iproc] *= elastic_mask.model['vs'][iproc]
+            # TODO also do rho, or anything else.
+        misfit_kernel.write(path = self.path['eval_grad']+'/misfit_kernel')
+
 
     def evaluate_gradient_from_kernels(self):
         """
