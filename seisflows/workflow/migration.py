@@ -174,7 +174,7 @@ class Migration(Forward):
         self.system.run([combine_event_kernels, smooth_misfit_kernel],
                         single=True)
 
-        # Apply a mask in acoustic region. Kernel smoothing makes false sensitivity in water.
+        #brb2023/08 Apply a mask in acoustic region. Kernel smoothing makes false sensitivity in water.
         elastic_mask = Model(path = self.path['eval_grad']+'/mask.bin')
         misfit_kernel = Model(path = self.path['eval_grad']+'/misfit_kernel')
 
