@@ -20,6 +20,7 @@ model
 import os
 import sys
 import shutil
+import numpy as np
 from glob import glob
 from seisflows import logger
 from seisflows.tools import msg, unix
@@ -163,15 +164,40 @@ class Migration(Forward):
                                              "misfit_kernel")
                 )
 
-        # Make sure were in a clean scratch eval_grad directory
+        def clip_kernel(): 
+            """Clip misfit kernel. brb2023/08/22"""
+            clip_percentile = 99 # Clip at this percentile. 
+            ker_path = self.path['eval_grad']+'/misfit_kernel'
+
+            misfit_kernel = Model(path = ker_path) # Load summed kernel
+            for iparam, param in enumerate(misfit_kernel.parameters): # Loop over each kernel
+                ker_all = np.concatenate(misfit_kernel.model[param]) # Kernel values across all MPI domains
+                ker_all = np.abs(ker_all) # Absolute values, so we don't have to deal with positive and negative for getting clipping amplitude
+                ker_max = ker_all.max() 
+                clip_num = np.percentile(ker_all, 99) # Clip at some percentile. 
+                logger.debug(f'Previous max for {param}: {ker_max}. Clipped max at {clip_percentile}th percentile: {clip_num}')
+                
+                # Apply clipping to each core.
+                for icore, sub_ker in enumerate(misfit_kernel.model[param]): # access the kernel for each MPI domain
+                    # print('Positive clip:')
+                    # print(sum(sub_ker >  clip_num))
+                    # print('Negative clip:')
+                    # print(sum(sub_ker < -clip_num))
+                    sub_ker[sub_ker >  clip_num] =  clip_num 
+                    sub_ker[sub_ker < -clip_num] = -clip_num
+
+            misfit_kernel.write(path = ker_path)
+
+        # Make sure were in a clean scratch eval_grad ådirectory
         tags = ["misfit_kernel", "mk_nosmooth"]
         for tag in tags:
             scratch_path = os.path.join(self.path.eval_grad, tag)
             if os.path.exists(scratch_path):
                 shutil.rmtree(scratch_path)
 
+
         logger.info(msg.mnr("GENERATING/PROCESSING MISFIT KERNEL"))
-        self.system.run([combine_event_kernels, smooth_misfit_kernel],
+        self.system.run([combine_event_kernels, clip_kernel, smooth_misfit_kernel],
                         single=True)
 
         #brb2023/08 Apply a mask in acoustic region. Kernel smoothing makes false sensitivity in water.
@@ -187,6 +213,8 @@ class Migration(Forward):
                 misfit_kernel.model['vs_kernel'][iproc] *= elastic_mask.model['vs'][iproc]
             # TODO also do rho, or anything else.
         misfit_kernel.write(path = self.path['eval_grad']+'/misfit_kernel')
+
+        print('Postprocess kernel done')
 
 
     def evaluate_gradient_from_kernels(self):
