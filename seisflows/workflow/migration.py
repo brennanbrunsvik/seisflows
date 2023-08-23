@@ -217,6 +217,7 @@ class Migration(Forward):
             elastic_mask = Model(path = self.path["mask_elastic"])
             misfit_kernel = Model(path = self.path['eval_grad']+'/misfit_kernel')
 
+            logger.debug('Apply mask to acoustic regions in kernel. ')
             if len(misfit_kernel.available_parameters) > 2:
                 logger.critical('I only made vp and vs kernel masks. If you are inverting more parameters, change their masking here. Continuing, but elastic sensitivity might be smoothed into acoustic domains. ')
             for iproc in range(len(elastic_mask.model['vp'])): # For each process or mpi domain.
