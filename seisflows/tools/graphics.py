@@ -76,14 +76,13 @@ def plot_2d_image(x, z, data, cmap="viridis", zero_midpoint=False, resX=1000, re
     ry = 1/np.sqrt(1 + r**2)
 
     # Assign zero as the midpoint for things like gradients
-    if zero_midpoint:
-        if clip_val is not None: 
-            vmin = - clip_val 
-            vmax =   clip_val 
-        else: 
-            abs_max_val = max(abs(data))
-            vmin = -1 * abs_max_val
-            vmax = abs_max_val
+    if clip_val is not None: 
+        vmin = - clip_val 
+        vmax =   clip_val 
+    elif zero_midpoint: 
+        abs_max_val = max(abs(data))
+        vmin = -1 * abs_max_val
+        vmax = abs_max_val
 
     else:
         vmin, vmax = None, None

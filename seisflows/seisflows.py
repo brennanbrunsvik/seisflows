@@ -1070,7 +1070,7 @@ class SeisFlows:
         st.plot(outfile=savefig, **kwargs)
 
     def plot2d(self, name=None, parameter=None, cmap=None, savefig=None,
-               stanum_plt = None,
+               stanum_plt = None, velocity_minus_init = True, 
                **kwargs):
         """
         Plot model, gradient or kernels in the PATH.OUTPUT
@@ -1120,9 +1120,24 @@ class SeisFlows:
         # Now read in the actual updated values and update the model
         plot_model = Model(path=os.path.join(output_dir, name_wsta))
         plot_model.coordinates = base_model.coordinates
+
+        # # brb2023/08/24 Show difference from initial model. 
+        if velocity_minus_init and ( 
+            (parameter.lower()=='vs') or 
+            (parameter.lower()=='vp') or 
+            (parameter.lower()=='rho') ): 
+            print('Plotting change in model from init model. ')
+            for iparam, param in enumerate(plot_model.model.keys()): 
+                for impi in range(len(plot_model.model[param])): 
+                    plot_model.model[param][impi] = plot_model.model[param][impi] - base_model.model[param][impi]
+            c_limits = 300 # TODO define as kwarg. 
+        else: 
+            c_limits = None
+
         # plot2d has internal check for acceptable parameter value
-        plot_model.plot2d(parameter=parameter, cmap=cmap, show=True,
-                          title=f"{name} // {parameter.upper()}", save=savefig)
+        plot_model.plot2d(parameter=parameter, cmap=cmap, show=False,
+                          title=f"{name} // {parameter.upper()}", save=savefig, 
+                          c_limits = c_limits)
 
     def reset(self, choice=None, **kwargs):
         """

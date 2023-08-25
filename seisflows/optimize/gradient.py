@@ -434,11 +434,12 @@ class Gradient:
             m_try.check()
 
             # How much was model updated?
-            plt.figure()
+            plt.figure() # Don't think opening figure is needed, but do so to make sure hist figure gets closed. 
             dm = np.abs((alpha * _p.vector))
             update_hist = plt.hist(dm)
-            update_counts, update_vals = [update_hist[0], update_hist[1]]
-            plt.close()
+            update_counts, update_vals = [update_hist[0], update_hist[1]] # Get how the model being updated. 
+            plt.close() # Close hist, or blank figure. Not sure if this is needed. 
+            logger.debug(f"Model update histogram. Updates in m/s:\n  {update_vals}\n    counts:\n  {update_counts}")
 
 
         elif status.upper() == "FAIL":

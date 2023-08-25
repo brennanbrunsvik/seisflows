@@ -534,7 +534,8 @@ class Model:
         elif vector is not None:
             self.model = self.split(vector=vector)
 
-    def plot2d(self, parameter, cmap=None, show=True, title="", save=None):
+    def plot2d(self, parameter, cmap=None, show=True, title="", save=None, 
+        c_limits = None):
         """
         Plot internal model parameters as a 2D image plot.
 
@@ -581,17 +582,18 @@ class Model:
             z = np.append(z, self.coordinates["z"][iproc])
         data = self.merge(parameter=parameter)
 
-        cap_data = False
-        if cap_data and ("kernel" in parameter): 
-            nstd_cap = 20# 0.0025
-            Warning(f'Capping kernel at + - {nstd_cap} standard deviation')
-            std = np.std(np.abs(data)) * nstd_cap
-        else: 
-            std = None 
+        # if c_limits is None: 
+            # cap_data = False
+            # if cap_data and ("kernel" in parameter): 
+            #     nstd_cap = 20# 0.0025
+            #     Warning(f'Capping kernel at + - {nstd_cap} standard deviation')
+            #     std = np.std(np.abs(data)) * nstd_cap
+            # else: 
+            #     std = None 
 
         f, p, cbar = plot_2d_image(x=x, z=z, data=data, cmap=cmap,
                                    zero_midpoint=zero_midpoint, 
-                                   clip_val = std)
+                                   clip_val = c_limits)
 
         # Set some figure labels based on information we know here
         ax = plt.gca()
