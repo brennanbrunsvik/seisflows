@@ -23,6 +23,7 @@ import sys
 import numpy as np
 
 from glob import glob
+import shutil
 from seisflows import logger
 from seisflows.workflow.migration import Migration
 from seisflows.tools import msg, unix
@@ -522,6 +523,19 @@ class Inversion(Migration):
             unix.mkdir(self.path.eval_func)
 
         self.preprocess.finalize()
+
+        # Clean waveforms that we probably don't need any more. TODO add option for this. This is better than not saving waveforms in the first place, because the inversion could get stuck. 
+        if self.iteration > 2: # Leave first and last iteration waveforms, for comparison. Could downsample instead. 
+            iter_del = self.iteration - 1 
+            fold_del = glob(f'{self.path.output}/solver_*{iter_del}') # Might want to just to the sem files. 
+            for ifol, fold in enumerate(fold_del): # Should only be one folder, but loop just in case. 
+                try: 
+                    shutil.rmtree(fold) 
+                    logger.debug(f'Cleaned data from folder: {fold}')
+                except Exception as e: 
+                    logger.debug(f'Could not delete folder {fold}.\n  Error message was: \n  {e}')
+
+
 
     def _update_thrifty_status(self):
         """
