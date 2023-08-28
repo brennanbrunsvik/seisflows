@@ -21,6 +21,8 @@ import os
 import sys
 import subprocess
 from glob import glob
+import re 
+import pandas as pd 
 
 from seisflows import logger
 from seisflows.tools import msg, unix
@@ -586,23 +588,48 @@ class Specfem:
 
         unix.cd(self.cwd)
 
-                # Convert pressure PRE label to P. Specfem outputs PRE, seisflows expects P. 
+        # Make sure there is an adjoint source for each station and component. If missing, then write an empty one. 
+        #brb2023/08/28 Starting in dir: '/Users/bbrunsvik/Documents/adjoint_scratch/scratch/solver/000099'
+        stas_specfem = pd.read_csv('./DATA/STATIONS', header = None).values # Stations file that specfem will read. It expects an adjoint file for each of these stations. 
+        p_traces = os.getcwd() + "/traces/adj" # Path to adjoint traces. 
+        
+        # Load an example adjoint source file. 
+        f_adj_examp = os.listdir(p_traces)[0] # Won't work if there are other files in the traces folder besides adjoint sources. Also won't work if there are no files here. 
+        adj_examp = pd.read_csv(p_traces+'/'+f_adj_examp, header = None, sep = ' ') # Read the adjoint source. 
+        adj_examp[1].values[:]=0 # Modify to be an example adjoint file with values of only 0. Leave time alone. 
+
+        # Check for missing adjoint sources, and write the example one where necessary. 
+        stas_with_no_adj_srcs = []
+        for icomp, comp in enumerate(self.components): 
+            for ista, sta_str in enumerate(stas_specfem): # For every station 
+                sta, net = sta_str[0].split(' ')[0:2]
+                adj_str = f'{net}.{sta}.X{comp}.adj' # brb2023/08/28 This was the format of adjoint trace files I could see while writing this. 
+
+                adj_file = f'{p_traces}/{adj_str}'
+                if not os.path.isfile(adj_file): # There is no adjoint source for this station! 
+                    stas_with_no_adj_srcs.append(adj_str) 
+                    adj_examp.to_csv(adj_file, 
+                        float_format='%.18e', sep = ' ', header = False, index = False) # brb2023/08/28 This is the format I could see in written adjoint sources. 
+
+        if len(stas_with_no_adj_srcs) > 0: 
+            logger.debug(f'There were no adjoint sources for {len(stas_with_no_adj_srcs)} stations. Empty sources were written for stations: {stas_with_no_adj_srcs}')
+
+        # Convert pressure PRE label to P. Specfem outputs PRE, seisflows expects P. 
         if 'P' in self.components: 
-            import re 
             p_traces = os.getcwd() + "/traces/adj"
             output_files = glob(p_traces+"/*.XP.*") # If no PRE files, this should do nothing. 
             for ifile, ffile in enumerate(output_files): 
                 fstream = ffile.split('/')[-1] # Get the NET.STA.COMPONENT.
                 fstream_new = fstream.replace('.XP.', '.PRE.') # Replace PRE with P. If there was just PRE and no leading qualifiers, we should make sure there are three characters. 
                 fstream_new = p_traces + '/' + fstream_new
-                os.system(f'cp {ffile} {fstream_new}') # TODO copy? or mv? 
-
+                os.system(f'mv {ffile} {fstream_new}') 
 
         setpar(key="SIMULATION_TYPE", val="3", file="DATA/Par_file")
         setpar(key="SAVE_FORWARD", val=".false.", file="DATA/Par_file")
 
         unix.rm("SEM")
         unix.ln("traces/adj", "SEM")
+
 
 
         # Calling subprocess.run() for each of the binary executables listed
