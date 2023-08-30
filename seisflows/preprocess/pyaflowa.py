@@ -342,11 +342,13 @@ class Pyaflowa:
         # Run processing in serial
         else:
 
-            # brb2023/08/11 Before calculating misfit: if the h5 waveform dataset is present from a previous line search iteration, remove it. I get an error where waveform components are not loaded in (compnoent = '') if the h5 dataset was present before running quantify_misfit_station
+            # # brb2023/08/11 Before calculating misfit: if the h5 waveform dataset is present from a previous line search iteration, remove it. I get an error where waveform components are not loaded in (compnoent = '') if the h5 dataset was present before running quantify_misfit_station
             ds_fid = os.path.join(self.path["_datasets"], f"{config.event_id}.h5")
             if os.path.isfile(ds_fid): 
-                os.remove(ds_fid) 
-                print('Removing h5 dataset before calculating misfit')
+                logger.debug('brb2023/07 Leaving h5 data set alone. Might give an error with missing components. ' )
+                ## Uncomment the below two lines if you find yourself again needing to remove the h5 file. 
+                # os.remove(ds_fid) 
+                # logger.debug('brb2023/07 Temporary fix: removing h5 dataset. It caused errors where station components were not known. However, now you probably cannot reuse windows.' )
 
             #brb2023/08/15 Only plot a subset of waveforms. Plotting could otherwise be extremely slow.
             nsta_plot = 15 # Plot this many stations
@@ -500,10 +502,11 @@ class Pyaflowa:
             station_logger.warning(e)
             return None, None
         
-        for istr in range(len(mgmt.st)): 
-            if len(mgmt.st[istr].stats.component)==0:  #brb2023/08/10 Getting a component of '' sometimes when the datasets folder already has a dataset in it. 
-                raise ValueError('brb2023/08/10. Channel code missing in a stream. Maybe need to delete datasets/h5 file before each line search. ')
-        
+        # A temporary fix. # If loaded from h5 dataset, sometimes obs waveform doesn't have component. As a hack, just get the component from the synthetic waveform. There is probably a bigger underlying issue. 
+        if len(mgmt.st_obs[0].stats.component)==0: 
+            mgmt.st_obs[0].stats.component = mgmt.st_syn[0].stats.component 
+            mgmt.st_obs[0].stats.channel   = mgmt.st_syn[0].stats.channel 
+
         # If any part of this processing fails, move on to plotting because we
         # will have gathered waveform data so a figure is still useful.
         try:
