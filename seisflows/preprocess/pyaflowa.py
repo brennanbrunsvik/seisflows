@@ -11,6 +11,7 @@ import random
 import numpy as np
 from glob import glob
 from pyasdf import ASDFDataSet
+import json
 
 from pyatoa import Config, Manager, Inspector, ManagerError
 from pyatoa.utils.read import read_station_codes
@@ -342,6 +343,13 @@ class Pyaflowa:
         # Run processing in serial
         else:
 
+            load_manual_windows = True #brb2023/08/31 Should set options in seisflows par file to control this. For now, I don't have the time to do so, and this parameter must be toggled here. 
+            if load_manual_windows: 
+                with open(self.path.specfem_data + '/window_dictionary.json') as file: # brb2023/08/31 Expect this to be the place and name of the manual windows file. 
+                    manual_windows = json.load(file) 
+            else: 
+                manual_windows = None
+
             # # brb2023/08/11 Before calculating misfit: if the h5 waveform dataset is present from a previous line search iteration, remove it. I get an error where waveform components are not loaded in (compnoent = '') if the h5 dataset was present before running quantify_misfit_station
             ds_fid = os.path.join(self.path["_datasets"], f"{config.event_id}.h5")
             if os.path.isfile(ds_fid): 
@@ -361,7 +369,8 @@ class Pyaflowa:
             for icode, code in enumerate(self._station_codes): # brb2023/08/15 This block of code is running slow. Why?
                 to_plot = icode in plot_sta
                 misfit_sta, nwin_sta = self.quantify_misfit_station(
-                    config=config, station_code=code, save_adjsrcs=save_adjsrcs, plot = to_plot
+                    config=config, station_code=code, save_adjsrcs=save_adjsrcs, plot = to_plot, 
+                    manual_windows = manual_windows 
                 )
                 if misfit_sta is not None:
                     misfit += misfit_sta
@@ -443,7 +452,7 @@ class Pyaflowa:
         return config
 
     def quantify_misfit_station(self, config, station_code, save_adjsrcs=False,
-                                plot = None):
+                                plot = None, manual_windows = None):
         """
         Main Pyatoa processing function to quantify misfit + generation adjsrc.
 
@@ -512,7 +521,7 @@ class Pyaflowa:
         try:
             mgmt.standardize()
             mgmt.preprocess()
-            mgmt.window(fix_windows=_fix_win)
+            mgmt.window(fix_windows=_fix_win, manual_windows = manual_windows)
             mgmt.measure()
         except ManagerError as e:
             station_logger.warning(e)
