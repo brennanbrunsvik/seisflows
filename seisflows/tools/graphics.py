@@ -103,7 +103,13 @@ def plot_2d_image(x, z, data, cmap="viridis", zero_midpoint=False, resX=1000, re
     xi = np.linspace(min(x), max(x), resX)
     zi = np.linspace(min(z), max(z), resZ)
     X, Z = np.meshgrid(xi, zi)
-    V = griddata((x, z), data, (X, Z), method='linear')
+
+    # Plotting method. Nearest very fast, linear extremely slow for large kernels. 
+    interp_method = 'nearest'
+    if interp_method == 'nearest': 
+        print('Using interpolation method "nearest". Look out for corresponding artifacts in the image. ')
+
+    V = griddata((x, z), data, (X, Z), method=interp_method)
     im = plt.imshow(V, vmax=vmax, vmin=vmin,
                     extent=[x.min(), x.max(), z.min(), z.max()],
                     cmap=cmap,
