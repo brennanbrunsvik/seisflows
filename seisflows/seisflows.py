@@ -1130,7 +1130,15 @@ class SeisFlows:
             for iparam, param in enumerate(plot_model.model.keys()): 
                 for impi in range(len(plot_model.model[param])): 
                     plot_model.model[param][impi] = plot_model.model[param][impi] - base_model.model[param][impi]
-            c_limits = 300 # TODO define as kwarg. 
+            c_limits = 500 # TODO define as kwarg. 
+        elif 'kernel' in parameter: # Kernels aren't clipped, so we need to cap the colorbar to understand them. 
+            i = 0 
+            import numpy as np 
+            each_val = np.zeros(0, dtype = plot_model.model[parameter][0].dtype)
+            for i in range(len(plot_model.model[parameter])):
+                each_val = np.concatenate( (each_val, plot_model.model[parameter][i]) ) 
+            each_val = np.sort(np.abs(each_val))
+            c_limits = each_val[int(.99 * len(each_val)) ]
         else: 
             c_limits = None
 

@@ -609,10 +609,12 @@ class Specfem:
 
         # Check for missing adjoint sources, and write the example one where necessary. 
         stas_with_no_adj_srcs = []
+        comp_name = f_adj_examp.split('.')[2]
+        file_extension = f_adj_examp.split('.')[3]
         for icomp, comp in enumerate(self.components): 
             for ista, sta_str in enumerate(stas_specfem): # For every station 
                 sta, net = sta_str[0].split(' ')[0:2]
-                adj_str = f'{net}.{sta}.X{comp}.adj' # brb2023/08/28 This was the format of adjoint trace files I could see while writing this. 
+                adj_str = f'{net}.{sta}.{comp_name}.{file_extension}' # brb2023/08/28 This was the format of adjoint trace files I could see while writing this. 
 
                 adj_file = f'{p_traces}/{adj_str}'
                 if not os.path.isfile(adj_file): # There is no adjoint source for this station! 
@@ -626,10 +628,10 @@ class Specfem:
         # Convert pressure PRE label to P. Specfem outputs PRE, seisflows expects P. 
         if 'P' in self.components: 
             p_traces = os.getcwd() + "/traces/adj"
-            output_files = glob(p_traces+"/*.XP.*") # If no PRE files, this should do nothing. 
+            output_files = glob(p_traces+f"/*.{comp_name}.*") # If no PRE files, this should do nothing. 
             for ifile, ffile in enumerate(output_files): 
                 fstream = ffile.split('/')[-1] # Get the NET.STA.COMPONENT.
-                fstream_new = fstream.replace('.XP.', '.PRE.') # Replace PRE with P. If there was just PRE and no leading qualifiers, we should make sure there are three characters. 
+                fstream_new = fstream.replace(f'.{comp_name}.', '.PRE.') # Replace PRE with P. If there was just PRE and no leading qualifiers, we should make sure there are three characters. 
                 fstream_new = p_traces + '/' + fstream_new
                 os.system(f'mv {ffile} {fstream_new}') 
 
