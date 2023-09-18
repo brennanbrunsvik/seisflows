@@ -596,12 +596,13 @@ class Specfem:
         # Load an example adjoint source file. 
         f_adj_examp = os.listdir(p_traces)
         if len(f_adj_examp) < 1: 
-            logger.critical(
-                msg.cli("No adjoint sources were present for adjoint simulation. Maybe there were no windows used for all stations?",
-                        items=[f"..."],
-                        header="No adjoint sources", border="=")
-            )
-            sys.exit(-1)
+            raise NotImplementedError("No adjoint sources present for this station. This can happen if there were no windows used for this station. TODO: write an empty adjoint source even if there were no example files to take the format from. ")
+            # logger.critical(
+            #     msg.cli("No adjoint sources were present for adjoint simulation. Maybe there were no windows used for all stations?",
+            #             items=[f"..."],
+            #             header="No adjoint sources", border="=")
+            # )
+            # sys.exit(-1)
 
         f_adj_examp = f_adj_examp[0] # Won't work if there are other files in the traces folder besides adjoint sources. Also won't work if there are no files here. 
         adj_examp = pd.read_csv(p_traces+'/'+f_adj_examp, header = None, sep = ' ') # Read the adjoint source. 
